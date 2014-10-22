@@ -1,14 +1,18 @@
-﻿Build started 19-Oct-14 4:43:53 AM.
+﻿Build started 20-Oct-14 11:37:21 PM.
      1>Project "E:\Coding\Projects\ListFilesFolders\ListFilesFolders\ListFilesFolders.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
-         Creating "Debug\ListFilesFolders.unsuccessfulbuild" because "AlwaysCreate" was specified.
+         Touching "Debug\ListFilesFolders.unsuccessfulbuild".
        ClCompile:
-         C:\Program Files\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt ListFilesFoldersWindows.cpp
+         C:\Program Files\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt ListFilesFoldersWindows.cpp SearchCriteria.cpp
+         SearchCriteria.cpp
+         Generating Code...
+         Compiling...
          ListFilesFoldersWindows.cpp
      1>e:\coding\projects\listfilesfolders\listfilesfolders\listfilesfolderswindows.cpp(198): warning C4996: 'swscanf': This function or variable may be unsafe. Consider using swscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  c:\program files\microsoft visual studio 10.0\vc\include\stdio.h(582) : see declaration of 'swscanf'
      1>e:\coding\projects\listfilesfolders\listfilesfolders\listfilesfolderswindows.cpp(213): warning C4996: 'swscanf': This function or variable may be unsafe. Consider using swscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  c:\program files\microsoft visual studio 10.0\vc\include\stdio.h(582) : see declaration of 'swscanf'
+         Generating Code...
      1>e:\coding\projects\listfilesfolders\listfilesfolders\listfilesfolderswindows.cpp(434): warning C4715: 'RunApplicationForMainDialog' : not all control paths return a value
      1>e:\coding\projects\listfilesfolders\listfilesfolders\listfilesfolderswindows.cpp(461): warning C4715: 'RunApplicationForResultantDialog' : not all control paths return a value
        ResourceCompile:
@@ -34,4 +38,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:02.66
+Time Elapsed 00:00:06.32

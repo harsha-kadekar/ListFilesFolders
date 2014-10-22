@@ -275,6 +275,12 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				}
 			}
 
+			if (HIWORD(wParam) == BN_CLICKED)
+			{
+				if (LOWORD(wParam) == IDC_BTN_SL)
+					BrowseForFolder();
+			}
+
 			break;
 		}
 	case WM_CLOSE:
@@ -292,6 +298,12 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 
   return bReturnValue;
+}
+
+
+void BrowseForFolder()
+{
+
 }
 
 /*Function = ResultDialogproc
