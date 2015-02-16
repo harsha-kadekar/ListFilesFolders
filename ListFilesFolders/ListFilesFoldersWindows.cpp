@@ -10,6 +10,8 @@
 #include <windows.h>
 #include <stdio.h>
 #include <commctrl.h>
+#include <ShlObj.h>
+#include <Shlwapi.h>
 #include "resource.h"
 #include "ListFilesFoldersApp.h"
 #include "ListFilesFoldersWindows.h"
@@ -29,6 +31,99 @@ bool bModificationGreater = false;
 bool bModificationLesser = false;
 
 SEARCHFILEFOLDER *sffSearchCriteria = NULL;
+FILEINFO* SearchFolderInfo = NULL;
+
+void BrowseForFolder(HWND hDlg)
+{
+
+	TCHAR path[MAX_PATH];
+	BROWSEINFO bi = {0};
+	bi.lpszTitle = L"Select the Folder to start search operation";
+	LPITEMIDLIST pidl = SHBrowseForFolder(&bi);
+
+	if(pidl != NULL)
+	{
+		SHGetPathFromIDList(pidl, path);
+		//SendMessage(GetDlgItem(hDlg, IDC_EDIT_MINSIZE), 
+		SetDlgItemText(hDlg, IDC_EDIT_SEARLOC, path);
+
+
+	}
+}
+
+int FormChain()
+{
+	WIN32_FIND_DATA FindFileData;
+	TCHAR szFullPattern[MAX_PATH];
+	HANDLE hFind;
+	__int64 nFileSize = 0;
+	LSTFILEINSUBFOLDER* lstOfSubFolder = NULL;
+	FILEINFO* ptrCurrentSubFile = NULL;
+
+	if(sffSearchCriteria != NULL)
+	{
+		hFind = FindFirstFile(sffSearchCriteria->location, &FindFileData);
+		if(hFind == INVALID_HANDLE_VALUE)
+		{
+			return -1;
+		}
+
+		if(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+		{
+			SearchFolderInfo = (FILEINFO*)malloc(sizeof(FILEINFO));
+			SearchFolderInfo->location = sffSearchCriteria->location;
+			SearchFolderInfo->ParentFolder = NULL;
+			SearchFolderInfo->bIsFile = false;
+			SearchFolderInfo->actualData = &FindFileData;
+			SearchFolderInfo->strFileName = sffSearchCriteria->location;
+			PathStripPath(SearchFolderInfo->strFileName);
+			if((FindFileData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN))
+				SearchFolderInfo->bHidden = true;
+			else
+				SearchFolderInfo->bHidden = false;
+
+			if(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_READONLY)
+				SearchFolderInfo->bReadonly = true;
+			else
+				SearchFolderInfo->bReadonly = false;
+
+
+			SearchFolderInfo->dwFileAttributes = FindFileData.dwFileAttributes;
+			SearchFolderInfo->ftCreationTime = FindFileData.ftCreationTime;
+			SearchFolderInfo->ftModificationTime = FindFileData.ftLastWriteTime;
+
+			PathCombine(szFullPattern, sffSearchCriteria->location, L"*");
+			hFind = FindFirstFile(szFullPattern, &FindFileData);
+			if(hFind != INVALID_HANDLE_VALUE)
+			{
+				do
+				{
+					if(wcscmp(FindFileData.cFileName, L".") != 0 && wcscmp(FindFileData.cFileName, L"..") != 0)
+					{
+						if(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+						{
+							if(!((FindFileData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) && (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) && (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_SYSTEM)))
+							{
+
+
+							}
+							else
+							{
+
+							}
+						}
+						else
+						{
+
+
+						}
+					}
+
+				}while(FindNextFile(hFind, &FindFileData));
+
+			}
+	}
+}
 
 /*Function = Dialogproc
  *Description = this is the dialog procedure which will handle all the commands which are given to the Main Dialog ie the dialog having
@@ -179,7 +274,7 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 					sffSearchCriteria = (SEARCHFILEFOLDER*)malloc(sizeof(SEARCHFILEFOLDER));
 
-					sffSearchCriteria->nMaxSize = sffSearchCriteria->nMinSize = -1;
+					sffSearchCriteria->nMaxSize = sffSearchCriteria->nMinSize = 0;
 					sffSearchCriteria->bCreationDateGreater = sffSearchCriteria->bCreationDateLesser = sffSearchCriteria->bHiddenFiles = sffSearchCriteria->bModificationGreater = sffSearchCriteria->bModificationLesser = sffSearchCriteria->bReadOnlyFiles = false;
 					sffSearchCriteria->strCreationDate = NULL;
 					sffSearchCriteria->strModificationDate = NULL;
@@ -195,9 +290,10 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 								memset(buffer, L'\0', len+1);
 								//SendMessage(GetDlgItem(hDlg, IDC_EDIT_MAXSIZE), WM_GETTEXT, (WPARAM)len, (LPARAM)buffer);
 								GetWindowText(GetDlgItem(hDlg, IDC_EDIT_MAXSIZE), buffer, len+1);
-								swscanf(buffer, L"%d", &sffSearchCriteria->nMaxSize);
+								swscanf(buffer, L"%ld", &sffSearchCriteria->nMaxSize);
 								free(buffer);
 								buffer = NULL;
+								sffSearchCriteria->bSearchForMaxSize = true;
 							}
 						}
 
@@ -210,9 +306,10 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 								memset(buffer, L'\0', len+1);
 								//SendMessage(GetDlgItem(hDlg, IDC_EDIT_MAXSIZE), WM_GETTEXT, (WPARAM)len, (LPARAM)buffer);
 								GetWindowText(GetDlgItem(hDlg, IDC_EDIT_MINSIZE), buffer, len+1);
-								swscanf(buffer, L"%d", &sffSearchCriteria->nMinSize);
+								swscanf(buffer, L"%ld", &sffSearchCriteria->nMinSize);
 								free(buffer);
 								buffer = NULL;
+								sffSearchCriteria->bSearchForMinSize = true;
 							}
 						}
 						
@@ -269,6 +366,21 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 						sffSearchCriteria->bHiddenFiles = true;
 					}
 
+					int len = SendMessage(GetDlgItem(hDlg, IDC_EDIT_SEARLOC), WM_GETTEXTLENGTH, 0, 0);
+					if(len > 0)
+					{
+						sffSearchCriteria->location = (WCHAR*)malloc((len+1)*sizeof(WCHAR));
+						memset(sffSearchCriteria->location, L'\0', len+1);
+						//SendMessage(GetDlgItem(hDlg, IDC_EDIT_MAXSIZE), WM_GETTEXT, (WPARAM)len, (LPARAM)buffer);
+						GetWindowText(GetDlgItem(hDlg, IDC_EDIT_SEARLOC), sffSearchCriteria->location, len+1);
+						//swscanf(buffer, L"%s", &);
+						//free(buffer);
+						//buffer = NULL;
+					}
+
+					FormChain();
+
+
 					SendMessage(hDlg, WM_CLOSE, 0, 0);
 					bReturnValue = TRUE;
 					break;
@@ -278,7 +390,7 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if (HIWORD(wParam) == BN_CLICKED)
 			{
 				if (LOWORD(wParam) == IDC_BTN_SL)
-					BrowseForFolder();
+					BrowseForFolder(hDlg);
 			}
 
 			break;
@@ -301,10 +413,7 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 
 
-void BrowseForFolder()
-{
 
-}
 
 /*Function = ResultDialogproc
  *Description = this is the dialog procedure which will handle all the commands which are given to the Resultant Dialog ie the dialog having
@@ -354,6 +463,12 @@ INT_PTR CALLBACK ResultDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 						{
 							free(sffSearchCriteria->strModificationDate);
 							sffSearchCriteria->strModificationDate = NULL;
+						}
+
+						if(sffSearchCriteria->location != NULL)
+						{
+							free(sffSearchCriteria->location);
+							sffSearchCriteria->location = NULL;
 						}
 
 						free(sffSearchCriteria);

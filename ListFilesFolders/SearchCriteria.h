@@ -7,22 +7,25 @@ typedef struct SearchFilesFolders
 {
 	bool bHiddenFiles;
 	bool bReadOnlyFiles;
-	int nMaxSize;
-	int nMinSize;
+	__int64 nMaxSize;
+	__int64 nMinSize;
+	bool bSearchForMaxSize;
+	bool bSearchForMinSize;
 	bool bCreationDateGreater;
 	bool bCreationDateLesser;
 	bool bModificationGreater;
 	bool bModificationLesser;
 	WCHAR* strCreationDate;
 	WCHAR* strModificationDate;
+	WCHAR* location;
 	
 
 }SEARCHFILEFOLDER;
 
 
-typedef struct lstFileInfo
+typedef struct FileInfo
 {
-	DWORD dwFileSize;
+	__int64 dwFileSize;
 	WCHAR* strFileName;
 	WCHAR* location;
 	DWORD dwFileAttributes;
@@ -31,9 +34,18 @@ typedef struct lstFileInfo
 	FILETIME ftCreationTime;
 	FILETIME ftModificationTime;
 	bool bIsFile;
+	bool bError;
 	struct lstFileInfo* ParentFolder;
-	struct lstFileInfo* ChildElements;
+	struct LstFileInSubFolder* ChildElements;
 	PWIN32_FIND_DATA actualData;
-}LSTFILEINFO;
+}FILEINFO;
+
+typedef struct LstFileInSubFolder
+{
+	FILEINFO* fileFolder;
+	FILEINFO* nextFileFolder;
+}LSTFILEINSUBFOLDER;
+
+
 
 #endif
