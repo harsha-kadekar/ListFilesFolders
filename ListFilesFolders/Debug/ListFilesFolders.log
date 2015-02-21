@@ -1,40 +1,17 @@
-﻿Build started 17-Feb-15 2:19:57 AM.
+﻿Build started 21-Feb-15 11:10:48 PM.
      1>Project "E:\Coding\Projects\ListFilesFolders\ListFilesFolders\ListFilesFolders.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
-         Touching "Debug\ListFilesFolders.unsuccessfulbuild".
+         Creating "Debug\ListFilesFolders.unsuccessfulbuild" because "AlwaysCreate" was specified.
        ClCompile:
-         C:\Program Files\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt ListFilesFoldersApp.cpp ListFilesFoldersWindows.cpp SearchCriteria.cpp
-         SearchCriteria.cpp
-         ListFilesFoldersWindows.cpp
-     1>e:\coding\projects\listfilesfolders\listfilesfolders\listfilesfolderswindows.cpp(248): warning C4996: 'swscanf': This function or variable may be unsafe. Consider using swscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 c:\program files\microsoft visual studio 10.0\vc\include\stdio.h(582) : see declaration of 'swscanf'
-     1>e:\coding\projects\listfilesfolders\listfilesfolders\listfilesfolderswindows.cpp(264): warning C4996: 'swscanf': This function or variable may be unsafe. Consider using swscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 c:\program files\microsoft visual studio 10.0\vc\include\stdio.h(582) : see declaration of 'swscanf'
-         ListFilesFoldersApp.cpp
-         Generating Code...
-     1>e:\coding\projects\listfilesfolders\listfilesfolders\listfilesfolderswindows.cpp(81): warning C4715: 'FormChain' : not all control paths return a value
-     1>e:\coding\projects\listfilesfolders\listfilesfolders\listfilesfolderswindows.cpp(516): warning C4715: 'RunApplicationForMainDialog' : not all control paths return a value
-     1>e:\coding\projects\listfilesfolders\listfilesfolders\listfilesfolderswindows.cpp(543): warning C4715: 'RunApplicationForResultantDialog' : not all control paths return a value
+         All outputs are up-to-date.
        ResourceCompile:
-         C:\Program Files\Microsoft SDKs\Windows\v7.0A\bin\rc.exe /D _UNICODE /D UNICODE /l"0x0409" /nologo /fo"Debug\ListFilesFolders.res" ListFilesFolders.rc 
+         All outputs are up-to-date.
        ManifestResourceCompile:
-         C:\Program Files\Microsoft SDKs\Windows\v7.0A\bin\rc.exe /nologo /fo"Debug\ListFilesFolders.exe.embed.manifest.res" Debug\ListFilesFolders_manifest.rc 
+         All outputs are up-to-date.
        Link:
-         C:\Program Files\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"E:\Coding\Projects\ListFilesFolders\Debug\ListFilesFolders.exe" /INCREMENTAL /NOLOGO Shlwapi.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\ListFilesFolders.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"E:\Coding\Projects\ListFilesFolders\Debug\ListFilesFolders.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"E:\Coding\Projects\ListFilesFolders\Debug\ListFilesFolders.lib" /MACHINE:X86 Debug\ListFilesFolders.res
-         Debug\ListFilesFolders.exe.embed.manifest.res
-         Debug\ListFilesFoldersApp.obj
-         Debug\ListFilesFoldersWindows.obj
-         Debug\SearchCriteria.obj
+         All outputs are up-to-date.
        Manifest:
-         C:\Program Files\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /out:"Debug\ListFilesFolders.exe.embed.manifest" /manifest Debug\ListFilesFolders.exe.intermediate.manifest
-         C:\Program Files\Microsoft SDKs\Windows\v7.0A\bin\rc.exe /nologo /fo"Debug\ListFilesFolders.exe.embed.manifest.res" Debug\ListFilesFolders_manifest.rc 
-       LinkEmbedManifest:
-         C:\Program Files\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"E:\Coding\Projects\ListFilesFolders\Debug\ListFilesFolders.exe" /INCREMENTAL /NOLOGO Shlwapi.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\ListFilesFolders.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"E:\Coding\Projects\ListFilesFolders\Debug\ListFilesFolders.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"E:\Coding\Projects\ListFilesFolders\Debug\ListFilesFolders.lib" /MACHINE:X86 Debug\ListFilesFolders.res
-         Debug\ListFilesFolders.exe.embed.manifest.res
-         Debug\ListFilesFoldersApp.obj
-         Debug\ListFilesFoldersWindows.obj
-         Debug\SearchCriteria.obj
-         ListFilesFolders.vcxproj -> E:\Coding\Projects\ListFilesFolders\Debug\ListFilesFolders.exe
+         All outputs are up-to-date.
        FinalizeBuildStatus:
          Deleting file "Debug\ListFilesFolders.unsuccessfulbuild".
          Touching "Debug\ListFilesFolders.lastbuildstate".
@@ -42,4 +19,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:05.95
+Time Elapsed 00:00:00.21

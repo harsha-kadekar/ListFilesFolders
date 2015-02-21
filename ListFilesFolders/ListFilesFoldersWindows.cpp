@@ -29,6 +29,8 @@ bool bCreationLesser = false;
 bool bModificationDateSelected = false;
 bool bModificationGreater = false;
 bool bModificationLesser = false;
+HWND hTree = NULL;
+HINSTANCE hInst;
 
 SEARCHFILEFOLDER *sffSearchCriteria = NULL;
 FILEINFO* SearchFolderInfo = NULL;
@@ -51,32 +53,267 @@ void BrowseForFolder(HWND hDlg)
 	}
 }
 
+int RecursiveFormChain(FILEINFO* ptrCurrentFolder)
+{
+	WIN32_FIND_DATA FindFileData;
+	TCHAR szFullPattern[MAX_PATH];
+	TCHAR szLocation[MAX_PATH];
+	HANDLE hFind;
+	__int64 nFileSize = 0;
+	__int64 nTempSize = 0;
+	LSTFILEINSUBFOLDER* lstOfSubFolder = NULL;
+	LSTFILEINSUBFOLDER* ptrCurrentSubFile = NULL;
+	FILEINFO* ptrNewFile = NULL;
+	LARGE_INTEGER sz;
+	WCHAR* strLocation = NULL;
+	WCHAR* strFileName = NULL;
+
+	memset(szLocation, L'\0', MAX_PATH);
+	PathCombine(szFullPattern, ptrCurrentFolder->location, ptrCurrentFolder->strFileName);
+	PathCombine(szLocation, ptrCurrentFolder->location, ptrCurrentFolder->strFileName);
+	PathCombine(szFullPattern, szFullPattern, L"*");
+	hFind = FindFirstFile(szFullPattern, &FindFileData);
+	if(hFind != INVALID_HANDLE_VALUE)
+	{
+		do
+		{
+			if(wcscmp(FindFileData.cFileName, L".") != 0 && wcscmp(FindFileData.cFileName, L"..") != 0)
+			{
+				if(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				{
+					if(!((FindFileData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) && (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) && (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_SYSTEM)))
+					{
+						ptrNewFile = (FILEINFO*)malloc(sizeof(FILEINFO));
+						strLocation = (WCHAR*)malloc((wcslen(szLocation)+1)*sizeof(WCHAR));
+						memset(strLocation, L'\0', (wcslen(szLocation)+1));
+						wcscpy(strLocation, szLocation);
+						ptrNewFile->location = strLocation;
+						ptrNewFile->ParentFolder = ptrCurrentFolder;
+						ptrNewFile->bIsFile = false;
+						ptrNewFile->actualData = &FindFileData;
+						ptrNewFile->strFileName = FindFileData.cFileName;
+						PathStripPath(ptrNewFile->strFileName);
+						strFileName = (WCHAR*)malloc((wcslen(ptrNewFile->strFileName)+1)*sizeof(WCHAR));
+						memset(strFileName, L'\0', (wcslen(ptrNewFile->strFileName)+1));
+						wcscpy(strFileName, ptrNewFile->strFileName);
+						ptrNewFile->strFileName = strFileName;
+
+						if((FindFileData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN))
+							ptrNewFile->bHidden = true;
+						else
+							ptrNewFile->bHidden = false;
+
+						if(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_READONLY)
+							ptrNewFile->bReadonly = true;
+						else
+							ptrNewFile->bReadonly = false;
+
+
+						ptrNewFile->dwFileAttributes = FindFileData.dwFileAttributes;
+						ptrNewFile->ftCreationTime = FindFileData.ftCreationTime;
+						ptrNewFile->ftModificationTime = FindFileData.ftLastWriteTime;
+
+						RecursiveFormChain(ptrNewFile);
+
+						nFileSize += ptrNewFile->dwFileSize;
+
+						lstOfSubFolder = (LSTFILEINSUBFOLDER*)malloc(sizeof(LSTFILEINSUBFOLDER));
+						lstOfSubFolder->nextFileFolder = NULL;
+						lstOfSubFolder->fileFolder = ptrNewFile;
+
+						if(ptrCurrentSubFile == NULL)
+						{
+							ptrCurrentFolder->ChildElements = lstOfSubFolder;
+							ptrCurrentSubFile = lstOfSubFolder;
+
+						}
+						else
+						{
+							ptrCurrentSubFile->nextFileFolder = lstOfSubFolder;
+							ptrCurrentSubFile = lstOfSubFolder;
+						}
+
+
+
+
+
+					}
+					else
+					{
+						ptrNewFile = (FILEINFO*)malloc(sizeof(FILEINFO));
+						strLocation = (WCHAR*)malloc((wcslen(szLocation)+1)*sizeof(WCHAR));
+						memset(strLocation, L'\0', (wcslen(szLocation)+1));
+						wcscpy(strLocation, szLocation);
+						ptrNewFile->location = strLocation;
+						ptrNewFile->ParentFolder = ptrCurrentFolder;
+						ptrNewFile->bIsFile = false;
+						ptrNewFile->actualData = &FindFileData;
+						ptrNewFile->strFileName = FindFileData.cFileName;
+						PathStripPath(ptrNewFile->strFileName);
+						strFileName = (WCHAR*)malloc((wcslen(ptrNewFile->strFileName)+1)*sizeof(WCHAR));
+						memset(strFileName, L'\0', (wcslen(ptrNewFile->strFileName)+1));
+						wcscpy(strFileName, ptrNewFile->strFileName);
+						ptrNewFile->strFileName = strFileName;
+
+						if((FindFileData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN))
+							ptrNewFile->bHidden = true;
+						else
+							ptrNewFile->bHidden = false;
+
+						if(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_READONLY)
+							ptrNewFile->bReadonly = true;
+						else
+							ptrNewFile->bReadonly = false;
+
+
+						ptrNewFile->dwFileAttributes = FindFileData.dwFileAttributes;
+						ptrNewFile->ftCreationTime = FindFileData.ftCreationTime;
+						ptrNewFile->ftModificationTime = FindFileData.ftLastWriteTime;
+
+						//RecursiveFormChain(ptrNewFile);
+						ptrNewFile->dwFileSize = 0;
+						ptrNewFile->ChildElements = NULL;
+
+						ptrNewFile->bError = true;
+
+						nFileSize += ptrNewFile->dwFileSize;
+
+						lstOfSubFolder = (LSTFILEINSUBFOLDER*)malloc(sizeof(LSTFILEINSUBFOLDER));
+						lstOfSubFolder->nextFileFolder = NULL;
+						lstOfSubFolder->fileFolder = ptrNewFile;
+
+						if(ptrCurrentSubFile == NULL)
+						{
+							ptrCurrentFolder->ChildElements = lstOfSubFolder;
+							ptrCurrentSubFile = lstOfSubFolder;
+
+						}
+						else
+						{
+							ptrCurrentSubFile->nextFileFolder = lstOfSubFolder;
+							ptrCurrentSubFile = lstOfSubFolder;
+						}
+
+
+					}
+
+				}
+				else
+				{
+
+					ptrNewFile = (FILEINFO*)malloc(sizeof(FILEINFO));
+					strLocation = (WCHAR*)malloc((wcslen(szLocation)+1)*sizeof(WCHAR));
+					memset(strLocation, L'\0', (wcslen(szLocation)+1));
+					wcscpy(strLocation, szLocation);
+					ptrNewFile->location = strLocation;
+					ptrNewFile->ParentFolder = ptrCurrentFolder;
+					ptrNewFile->bIsFile = true;
+					ptrNewFile->actualData = &FindFileData;
+					ptrNewFile->strFileName = FindFileData.cFileName;//ptrNewFile->location;
+					PathStripPath(ptrNewFile->strFileName);
+					strFileName = (WCHAR*)malloc((wcslen(ptrNewFile->strFileName)+1)*sizeof(WCHAR));
+					memset(strFileName, L'\0', (wcslen(ptrNewFile->strFileName)+1));
+					wcscpy(strFileName, ptrNewFile->strFileName);
+					ptrNewFile->strFileName = strFileName;
+					if((FindFileData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN))
+						ptrNewFile->bHidden = true;
+					else
+						ptrNewFile->bHidden = false;
+
+					if(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_READONLY)
+						ptrNewFile->bReadonly = true;
+					else
+						ptrNewFile->bReadonly = false;
+
+
+					ptrNewFile->dwFileAttributes = FindFileData.dwFileAttributes;
+					ptrNewFile->ftCreationTime = FindFileData.ftCreationTime;
+					ptrNewFile->ftModificationTime = FindFileData.ftLastWriteTime;
+
+					ptrNewFile->ChildElements = NULL;
+
+							
+					sz.LowPart = FindFileData.nFileSizeLow;
+					sz.HighPart = FindFileData.nFileSizeHigh;
+					ptrNewFile->dwFileSize = sz.QuadPart;
+
+					nFileSize += ptrNewFile->dwFileSize;
+
+					lstOfSubFolder = (LSTFILEINSUBFOLDER*)malloc(sizeof(LSTFILEINSUBFOLDER));
+					lstOfSubFolder->nextFileFolder = NULL;
+					lstOfSubFolder->fileFolder = ptrNewFile;
+
+					if(ptrCurrentSubFile == NULL)
+					{
+						ptrCurrentFolder->ChildElements = lstOfSubFolder;
+						ptrCurrentSubFile = lstOfSubFolder;
+
+					}
+					else
+					{
+						ptrCurrentSubFile->nextFileFolder = lstOfSubFolder;
+						ptrCurrentSubFile = lstOfSubFolder;
+					}
+
+				}
+
+			}
+
+		}while(FindNextFile(hFind, &FindFileData));
+
+
+
+		ptrCurrentFolder->dwFileSize = nFileSize;
+	}
+	
+	return 0;
+
+}
+
 int FormChain()
 {
 	WIN32_FIND_DATA FindFileData;
 	TCHAR szFullPattern[MAX_PATH];
 	HANDLE hFind;
 	__int64 nFileSize = 0;
+	__int64 nTempSize = 0;
 	LSTFILEINSUBFOLDER* lstOfSubFolder = NULL;
-	FILEINFO* ptrCurrentSubFile = NULL;
+	LSTFILEINSUBFOLDER* ptrCurrentSubFile = NULL;
+	FILEINFO* ptrNewFile = NULL;
+	WCHAR* strLocation = NULL;
+	WCHAR* strFileName = NULL;
+	LARGE_INTEGER sz;
+	int nLastError = 0;
+	
 
 	if(sffSearchCriteria != NULL)
 	{
 		hFind = FindFirstFile(sffSearchCriteria->location, &FindFileData);
 		if(hFind == INVALID_HANDLE_VALUE)
 		{
+			nLastError = GetLastError();
+
 			return -1;
 		}
 
 		if(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 		{
 			SearchFolderInfo = (FILEINFO*)malloc(sizeof(FILEINFO));
-			SearchFolderInfo->location = sffSearchCriteria->location;
+			
+			strLocation = (WCHAR*)malloc((wcslen(sffSearchCriteria->location)+1)*sizeof(WCHAR));
+			memset(strLocation, L'\0', (wcslen(sffSearchCriteria->location)+1));
+			wcscpy(strLocation, sffSearchCriteria->location);
+			SearchFolderInfo->location = strLocation;
 			SearchFolderInfo->ParentFolder = NULL;
 			SearchFolderInfo->bIsFile = false;
 			SearchFolderInfo->actualData = &FindFileData;
-			SearchFolderInfo->strFileName = sffSearchCriteria->location;
+			SearchFolderInfo->strFileName = FindFileData.cFileName;
 			PathStripPath(SearchFolderInfo->strFileName);
+			strFileName = (WCHAR*)malloc((wcslen(SearchFolderInfo->strFileName)+1)*sizeof(WCHAR));
+			memset(strFileName, L'\0', (wcslen(SearchFolderInfo->strFileName)+1));
+			wcscpy(strFileName, SearchFolderInfo->strFileName);
+			SearchFolderInfo->strFileName = strFileName;
+
 			if((FindFileData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN))
 				SearchFolderInfo->bHidden = true;
 			else
@@ -104,16 +341,180 @@ int FormChain()
 						{
 							if(!((FindFileData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) && (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) && (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_SYSTEM)))
 							{
+								ptrNewFile = (FILEINFO*)malloc(sizeof(FILEINFO));
+								//ptrNewFile->location = sffSearchCriteria->location;
+								strLocation = (WCHAR*)malloc((wcslen(sffSearchCriteria->location)+1)*sizeof(WCHAR));
+								memset(strLocation, L'\0', (wcslen(sffSearchCriteria->location)+1));
+								wcscpy(strLocation, sffSearchCriteria->location);
+								ptrNewFile->location = strLocation;
+								ptrNewFile->ParentFolder = SearchFolderInfo;
+								ptrNewFile->bIsFile = false;
+								ptrNewFile->actualData = &FindFileData;
+								ptrNewFile->strFileName = FindFileData.cFileName;
+								PathStripPath(ptrNewFile->strFileName);
+								strFileName = (WCHAR*)malloc((wcslen(ptrNewFile->strFileName)+1)*sizeof(WCHAR));
+								memset(strFileName, L'\0', (wcslen(ptrNewFile->strFileName)+1));
+								wcscpy(strFileName, ptrNewFile->strFileName);
+								ptrNewFile->strFileName = strFileName;
+								if((FindFileData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN))
+									ptrNewFile->bHidden = true;
+								else
+									ptrNewFile->bHidden = false;
+
+								if(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_READONLY)
+									ptrNewFile->bReadonly = true;
+								else
+									ptrNewFile->bReadonly = false;
+
+
+								ptrNewFile->dwFileAttributes = FindFileData.dwFileAttributes;
+								ptrNewFile->ftCreationTime = FindFileData.ftCreationTime;
+								ptrNewFile->ftModificationTime = FindFileData.ftLastWriteTime;
+
+								RecursiveFormChain(ptrNewFile);
+
+								nFileSize += ptrNewFile->dwFileSize;
+
+								lstOfSubFolder = (LSTFILEINSUBFOLDER*)malloc(sizeof(LSTFILEINSUBFOLDER));
+								lstOfSubFolder->nextFileFolder = NULL;
+								lstOfSubFolder->fileFolder = ptrNewFile;
+
+								if(ptrCurrentSubFile == NULL)
+								{
+									SearchFolderInfo->ChildElements = lstOfSubFolder;
+									ptrCurrentSubFile = lstOfSubFolder;
+
+								}
+								else
+								{
+									ptrCurrentSubFile->nextFileFolder = lstOfSubFolder;
+									ptrCurrentSubFile = lstOfSubFolder;
+								}
+
+
+
+
+
 
 
 							}
 							else
 							{
 
+								ptrNewFile = (FILEINFO*)malloc(sizeof(FILEINFO));
+								strLocation = (WCHAR*)malloc((wcslen(sffSearchCriteria->location)+1)*sizeof(WCHAR));
+								memset(strLocation, L'\0', (wcslen(sffSearchCriteria->location)+1));
+								wcscpy(strLocation, sffSearchCriteria->location);
+								ptrNewFile->location = strLocation;
+								ptrNewFile->ParentFolder = SearchFolderInfo;
+								ptrNewFile->bIsFile = false;
+								ptrNewFile->actualData = &FindFileData;
+								ptrNewFile->strFileName = FindFileData.cFileName;
+								PathStripPath(ptrNewFile->strFileName);
+								strFileName = (WCHAR*)malloc((wcslen(ptrNewFile->strFileName)+1)*sizeof(WCHAR));
+								memset(strFileName, L'\0', (wcslen(ptrNewFile->strFileName)+1));
+								wcscpy(strFileName, ptrNewFile->strFileName);
+								ptrNewFile->strFileName = strFileName;
+								if((FindFileData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN))
+								ptrNewFile->bHidden = true;
+								else
+									ptrNewFile->bHidden = false;
+
+								if(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_READONLY)
+									ptrNewFile->bReadonly = true;
+								else
+									ptrNewFile->bReadonly = false;
+
+
+								ptrNewFile->dwFileAttributes = FindFileData.dwFileAttributes;
+								ptrNewFile->ftCreationTime = FindFileData.ftCreationTime;
+								ptrNewFile->ftModificationTime = FindFileData.ftLastWriteTime;
+
+								//RecursiveFormChain(ptrNewFile);
+								ptrNewFile->dwFileSize = 0;
+								ptrNewFile->ChildElements = NULL;
+
+								ptrNewFile->bError = true;
+
+								nFileSize += ptrNewFile->dwFileSize;
+
+								lstOfSubFolder = (LSTFILEINSUBFOLDER*)malloc(sizeof(LSTFILEINSUBFOLDER));
+								lstOfSubFolder->nextFileFolder = NULL;
+								lstOfSubFolder->fileFolder = ptrNewFile;
+
+								if(ptrCurrentSubFile == NULL)
+								{
+									SearchFolderInfo->ChildElements = lstOfSubFolder;
+									ptrCurrentSubFile = lstOfSubFolder;
+
+								}
+								else
+								{
+									ptrCurrentSubFile->nextFileFolder = lstOfSubFolder;
+									ptrCurrentSubFile = lstOfSubFolder;
+								}
+
 							}
 						}
 						else
 						{
+							ptrNewFile = (FILEINFO*)malloc(sizeof(FILEINFO));
+							ptrNewFile->location = sffSearchCriteria->location;//FindFileData.cFileName;
+							strLocation = (WCHAR*)malloc((wcslen(sffSearchCriteria->location)+1)*sizeof(WCHAR));
+							memset(strLocation, L'\0', (wcslen(sffSearchCriteria->location)+1));
+							wcscpy(strLocation, sffSearchCriteria->location);
+							ptrNewFile->location = strLocation;
+							ptrNewFile->ParentFolder = SearchFolderInfo;
+							ptrNewFile->bIsFile = true;
+							ptrNewFile->actualData = &FindFileData;
+							ptrNewFile->strFileName = FindFileData.cFileName;//ptrNewFile->location;
+							PathStripPath(ptrNewFile->strFileName);
+							strFileName = (WCHAR*)malloc((wcslen(ptrNewFile->strFileName)+1)*sizeof(WCHAR));
+							memset(strFileName, L'\0', (wcslen(ptrNewFile->strFileName)+1));
+							wcscpy(strFileName, ptrNewFile->strFileName);
+							ptrNewFile->strFileName = strFileName;
+							if((FindFileData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN))
+								ptrNewFile->bHidden = true;
+							else
+								ptrNewFile->bHidden = false;
+
+							if(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_READONLY)
+								ptrNewFile->bReadonly = true;
+							else
+								ptrNewFile->bReadonly = false;
+
+
+							ptrNewFile->dwFileAttributes = FindFileData.dwFileAttributes;
+							ptrNewFile->ftCreationTime = FindFileData.ftCreationTime;
+							ptrNewFile->ftModificationTime = FindFileData.ftLastWriteTime;
+
+							ptrNewFile->ChildElements = NULL;
+
+							
+							sz.LowPart = FindFileData.nFileSizeLow;
+							sz.HighPart = FindFileData.nFileSizeHigh;
+							ptrNewFile->dwFileSize = sz.QuadPart;
+
+							nFileSize += ptrNewFile->dwFileSize;
+
+							lstOfSubFolder = (LSTFILEINSUBFOLDER*)malloc(sizeof(LSTFILEINSUBFOLDER));
+							lstOfSubFolder->nextFileFolder = NULL;
+							lstOfSubFolder->fileFolder = ptrNewFile;
+
+							if(ptrCurrentSubFile == NULL)
+							{
+								SearchFolderInfo->ChildElements = lstOfSubFolder;
+								ptrCurrentSubFile = lstOfSubFolder;
+
+							}
+							else
+							{
+								ptrCurrentSubFile->nextFileFolder = lstOfSubFolder;
+								ptrCurrentSubFile = lstOfSubFolder;
+							}
+
+							
+
 
 
 						}
@@ -121,7 +522,10 @@ int FormChain()
 
 				}while(FindNextFile(hFind, &FindFileData));
 
+				SearchFolderInfo->dwFileSize = nFileSize;
+
 			}
+		}
 	}
 }
 
@@ -232,6 +636,7 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					if(bMaxFileSize)
 					{
 						bMaxFileSize = false;
+
 						EnableWindow( GetDlgItem(hDlg, IDC_EDIT_MAXSIZE), false);
 					}
 					else
@@ -276,8 +681,8 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 					sffSearchCriteria->nMaxSize = sffSearchCriteria->nMinSize = 0;
 					sffSearchCriteria->bCreationDateGreater = sffSearchCriteria->bCreationDateLesser = sffSearchCriteria->bHiddenFiles = sffSearchCriteria->bModificationGreater = sffSearchCriteria->bModificationLesser = sffSearchCriteria->bReadOnlyFiles = false;
-					sffSearchCriteria->strCreationDate = NULL;
-					sffSearchCriteria->strModificationDate = NULL;
+					/*sffSearchCriteria->strCreationDate = NULL;
+					sffSearchCriteria->strModificationDate = NULL;*/
 
 					if(bFileSizeSelected)
 					{
@@ -294,6 +699,7 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 								free(buffer);
 								buffer = NULL;
 								sffSearchCriteria->bSearchForMaxSize = true;
+								sffSearchCriteria->bSearchForMinSize = false;
 							}
 						}
 
@@ -310,6 +716,7 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 								free(buffer);
 								buffer = NULL;
 								sffSearchCriteria->bSearchForMinSize = true;
+								sffSearchCriteria->bSearchForMaxSize = false;
 							}
 						}
 						
@@ -317,10 +724,11 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 					if(bCreationDateSelected)
 					{
-						int len = SendMessage(GetDlgItem(hDlg, IDC_DATETIMEPICKER_CD), WM_GETTEXTLENGTH, 0, 0);
+						DateTime_GetSystemtime(GetDlgItem(hDlg, IDC_DATETIMEPICKER_CD), &sffSearchCriteria->systimeCreationDate);
+						/*int len = SendMessage(GetDlgItem(hDlg, IDC_DATETIMEPICKER_CD), WM_GETTEXTLENGTH, 0, 0);
 						sffSearchCriteria->strCreationDate = (WCHAR*)malloc((len+1)*sizeof(WCHAR));
 						memset(sffSearchCriteria->strCreationDate, L'\0', len+1);
-						GetWindowText(GetDlgItem(hDlg, IDC_DATETIMEPICKER_CD), sffSearchCriteria->strCreationDate, len+1);
+						GetWindowText(GetDlgItem(hDlg, IDC_DATETIMEPICKER_CD), sffSearchCriteria->strCreationDate, len+1);*/
 
 						if(IsDlgButtonChecked(hDlg, IDC_RADIO_GRE_CD))
 						{
@@ -338,10 +746,11 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 					if(bModificationDateSelected)
 					{
-						int len = SendMessage(GetDlgItem(hDlg, IDC_DATETIMEPICKER_MD), WM_GETTEXTLENGTH, 0, 0);
+						DateTime_GetSystemtime(GetDlgItem(hDlg, IDC_DATETIMEPICKER_MD), &sffSearchCriteria->systimeModificationDate);
+						/*int len = SendMessage(GetDlgItem(hDlg, IDC_DATETIMEPICKER_MD), WM_GETTEXTLENGTH, 0, 0);
 						sffSearchCriteria->strModificationDate = (WCHAR*)malloc((len+1)*sizeof(WCHAR));
 						memset(sffSearchCriteria->strModificationDate, L'\0', len+1);
-						GetWindowText(GetDlgItem(hDlg, IDC_DATETIMEPICKER_MD), sffSearchCriteria->strModificationDate, len+1);
+						GetWindowText(GetDlgItem(hDlg, IDC_DATETIMEPICKER_MD), sffSearchCriteria->strModificationDate, len+1);*/
 
 						if(IsDlgButtonChecked(hDlg, IDC_RADIO_GRE_MD))
 						{
@@ -413,6 +822,196 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 
 
+int CheckForSearchCondition(FILEINFO* fileFolder)
+{
+	int nReturnValue = 1;
+	if(sffSearchCriteria->bSearchForMaxSize)
+	{
+		if(fileFolder->dwFileSize > sffSearchCriteria->nMaxSize)
+		{
+			nReturnValue = 0;
+			return nReturnValue;
+		}
+	}
+	else if(sffSearchCriteria->bSearchForMinSize)
+	{
+		if(fileFolder->dwFileSize < sffSearchCriteria->nMinSize)
+		{
+			nReturnValue = 0;
+			return nReturnValue;
+		}
+	}
+	
+	if(sffSearchCriteria->bHiddenFiles)
+	{
+		if(!(fileFolder->bHidden))
+		{
+			nReturnValue = 0;
+			return nReturnValue;
+		}
+	}
+
+	if(sffSearchCriteria->bReadOnlyFiles)
+	{
+		if(!(fileFolder->bReadonly))
+		{
+			nReturnValue = 0;
+			return nReturnValue;
+		}
+	}
+
+	if(sffSearchCriteria->bCreationDateGreater)
+	{
+		FILETIME tempTime;
+		SystemTimeToFileTime(&sffSearchCriteria->systimeCreationDate, &tempTime);
+		if(CompareFileTime(&fileFolder->ftCreationTime, &tempTime) == -1)
+		{
+			nReturnValue = 0;
+			return nReturnValue;
+		}
+		//FileTimeToSystemTime(&fileFolder->ftCreationTime, &tempTime);
+
+		//if(fileFolder->ftCreationTime
+	}
+	else if(sffSearchCriteria->bCreationDateLesser)
+	{
+		FILETIME tempTime;
+		SystemTimeToFileTime(&sffSearchCriteria->systimeCreationDate, &tempTime);
+		if(CompareFileTime(&fileFolder->ftCreationTime, &tempTime) == 1)
+		{
+			nReturnValue = 0;
+			return nReturnValue;
+		}
+	}
+
+	if(sffSearchCriteria->bModificationGreater)
+	{
+		FILETIME tempTime;
+		SystemTimeToFileTime(&sffSearchCriteria->systimeCreationDate, &tempTime);
+		if(CompareFileTime(&fileFolder->ftCreationTime, &tempTime) == -1)
+		{
+			nReturnValue = 0;
+			return nReturnValue;
+		}
+	}
+	else if(sffSearchCriteria->bModificationLesser)
+	{
+		FILETIME tempTime;
+		SystemTimeToFileTime(&sffSearchCriteria->systimeModificationDate, &tempTime);
+		if(CompareFileTime(&fileFolder->ftModificationTime, &tempTime) == 1)
+		{
+			nReturnValue = 0;
+			return nReturnValue;
+		}
+	}
+
+
+	return nReturnValue;
+}
+
+void FormTreeView(TV_INSERTSTRUCT* tvinsert, HTREEITEM Before, HWND hDlg, LSTFILEINSUBFOLDER* lstChildElements)
+{
+	HTREEITEM Parent;
+
+	while(lstChildElements != NULL)
+	{
+		if(CheckForSearchCondition(lstChildElements->fileFolder) == 0)
+		{
+			lstChildElements = lstChildElements->nextFileFolder;
+
+						continue;
+		}
+					        // handle of the before root
+		tvinsert->hParent=Before;         // handle of the above data
+		tvinsert->hInsertAfter=TVI_LAST;  // below parent
+		tvinsert->item.pszText=lstChildElements->fileFolder->strFileName;
+			 
+		Parent=(HTREEITEM)SendDlgItemMessage(hDlg,IDC_TREE_RESULT,TVM_INSERTITEM,0,(LPARAM)tvinsert);
+
+					
+
+		if(!(lstChildElements->fileFolder->bIsFile))
+		{
+			//tvinsert->item.iImage=0;
+			//tvinsert->item.iSelectedImage=1;
+			FormTreeView(tvinsert, Parent, hDlg, lstChildElements->fileFolder->ChildElements);
+
+		}
+		else
+		{
+			//tvinsert->item.iImage=2;
+			//tvinsert->item.iSelectedImage=2;
+		}
+					
+
+
+
+		lstChildElements = lstChildElements->nextFileFolder;
+	}
+
+
+}
+
+void FreeFileFolderInfo(FILEINFO* fileFolder)
+{
+	if(fileFolder != NULL)
+	{
+		free(fileFolder->location);
+		free(fileFolder->strFileName);
+		
+		if(fileFolder->ChildElements != NULL)
+		{
+			FreeChildElements(fileFolder->ChildElements);
+		}
+
+	}
+}
+
+void FreeChildElements(LSTFILEINSUBFOLDER* ChildElements)
+{
+	//LSTFILEINSUBFOLDER* nextElement = NULL;
+	if(ChildElements != NULL)
+	{
+		FreeFileFolderInfo(ChildElements->fileFolder);
+		FreeChildElements(ChildElements->nextFileFolder);
+		free(ChildElements);
+	}
+
+}
+
+void FreeMemory()
+{
+	/*	SEARCHFILEFOLDER *sffSearchCriteria = NULL;
+	FILEINFO* SearchFolderInfo = NULL;*/
+
+	if(sffSearchCriteria != NULL)
+	{
+		if(sffSearchCriteria->location != NULL)
+		{
+			free(sffSearchCriteria->location);
+			sffSearchCriteria->location = NULL;
+		}
+
+		free(sffSearchCriteria);
+		sffSearchCriteria = NULL;
+
+
+	}
+
+	if(SearchFolderInfo != NULL)
+	{
+		free(SearchFolderInfo->location);
+		free(SearchFolderInfo->strFileName);
+		
+		if(SearchFolderInfo->ChildElements != NULL)
+		{
+			FreeChildElements(SearchFolderInfo->ChildElements);
+		}
+
+	}
+}
+
+
 
 
 /*Function = ResultDialogproc
@@ -424,56 +1023,124 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 INT_PTR CALLBACK ResultDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	bool bReturnValue = FALSE;
+	HIMAGELIST hImageList1, hImageList2; 
+	HBITMAP hBitMap;
+	TV_INSERTSTRUCT tvinsert;
+	HTREEITEM Parent;           
+	HTREEITEM Before;           
+	HTREEITEM Root;  
 
 	switch(uMsg)
 	{
-	//case WM_INITDIALOG:
-	//	{
-	//		InitCommonControls();
-	//		/*HWND hTree = GetDlgItem(hDlg, IDC_TREE_RESULT);
-	//		HIMAGELIST hImageList=ImageList_Create(16,16,ILC_COLOR16,2,10);
-	//		HBITMAP hBitMap=LoadBitmap(GetWindowLong(hDlg, GWL_HINSTANCE) ,MAKEINTRESOURCE(IDC_TREE_RESULT));
- //  ImageList_Add(hImageList,hBitMap,NULL);
- //  DeleteObject(hBitMap);
- //  SendDlgItemMessage(hDlg,IDC_TREE_RESULT,
- //      TVM_SETIMAGELIST,0,(LPARAM)hImageList); 
- //  tvinsert.hParent=NULL;
- //  tvinsert.hInsertAfter=TVI_ROOT;
- //  tvinsert.item.mask=TVIF_TEXT|TVIF_IMAGE|TVIF_SELECTEDIMAGE;
- //  tvinsert.item.pszText="Parent";
- //  tvinsert.item.iImage=0;
- //  tvinsert.item.iSelectedImage=1;*/
-	//		break;
-	//	}
+	case WM_INITDIALOG:
+		{
+			InitCommonControls();
+			hTree=GetDlgItem(hDlg,IDC_TREE_RESULT);
+			hImageList1=ImageList_Create(16,16,ILC_COLOR16,3,10);
+			hBitMap=LoadBitmap(hInst,MAKEINTRESOURCE(IDB_BITMAP2));
+			ImageList_Add(hImageList1,hBitMap,NULL);
+			DeleteObject(hBitMap);
+			hImageList2=ImageList_Create(16,16,ILC_COLOR16,2,10);
+			hBitMap = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP1));
+			ImageList_Add(hImageList2, hBitMap, NULL);
+			DeleteObject(hBitMap);
+			SendDlgItemMessage(hDlg,IDC_TREE_RESULT,TVM_SETIMAGELIST,0,(LPARAM)hImageList1);
+			//SendDlgItemMessage(hDlg,IDC_TREE_RESULT,TVM_SETIMAGELIST,0,(LPARAM)hImageList2);
+
+			
+			tvinsert.hParent=NULL;
+			tvinsert.hInsertAfter=TVI_ROOT;
+			tvinsert.item.mask=TVIF_TEXT|TVIF_IMAGE|TVIF_SELECTEDIMAGE;
+			//tvinsert.item.pszText=L"Parent";
+			tvinsert.item.pszText=SearchFolderInfo->strFileName;
+			tvinsert.item.iImage=0;
+			tvinsert.item.iSelectedImage=1;
+			//tvinsert.item.
+			Parent=(HTREEITEM)SendDlgItemMessage(hDlg,IDC_TREE_RESULT,TVM_INSERTITEM,0,(LPARAM)&tvinsert);
+			Root=Parent;
+			Before=Parent; 
+
+			if(SearchFolderInfo->ChildElements != NULL)
+			{
+				//FILEINFO* currentFile = NULL;
+				LSTFILEINSUBFOLDER* lstChildElements = SearchFolderInfo->ChildElements;
+
+				while(lstChildElements != NULL)
+				{
+					if(CheckForSearchCondition(lstChildElements->fileFolder) == 0)
+					{
+						lstChildElements = lstChildElements->nextFileFolder;
+						continue;
+					}
+
+					                  // handle of the before root
+					tvinsert.hParent=Before;         // handle of the above data
+					tvinsert.hInsertAfter=TVI_LAST;  // below parent
+					tvinsert.item.pszText=lstChildElements->fileFolder->strFileName;
+			 
+					Parent=(HTREEITEM)SendDlgItemMessage(hDlg,IDC_TREE_RESULT,TVM_INSERTITEM,0,(LPARAM)&tvinsert);
+
+					
+
+					if(!(lstChildElements->fileFolder->bIsFile))
+					{
+						//tvinsert.item.iImage=0;
+						//tvinsert.item.iSelectedImage=1;
+						FormTreeView(&tvinsert, Parent, hDlg, lstChildElements->fileFolder->ChildElements);
+
+					}
+					else
+					{
+						//tvinsert.item.iImage=2;
+						//tvinsert.item.iSelectedImage=2;
+					}
+					
+
+
+
+					lstChildElements = lstChildElements->nextFileFolder;
+				}
+
+			}
+
+
+
+
+			
+
+			break;
+		}
+	
 	case WM_COMMAND:
 		{
 			switch(LOWORD(wParam))
 			{
 			case IDOK:
 				{
-					if(sffSearchCriteria != NULL)
-					{
-						if(sffSearchCriteria->strCreationDate != NULL)
-						{
-							free(sffSearchCriteria->strCreationDate);
-							sffSearchCriteria->strCreationDate = NULL;
-						}
+					FreeMemory();
+					//if(sffSearchCriteria != NULL)
+					//{
+					//	/*if(sffSearchCriteria-> != NULL)
+					//	{
+					//		free(sffSearchCriteria->strCreationDate);
+					//		sffSearchCriteria->strCreationDate = NULL;
+					//	}
 
-						if(sffSearchCriteria->strModificationDate != NULL)
-						{
-							free(sffSearchCriteria->strModificationDate);
-							sffSearchCriteria->strModificationDate = NULL;
-						}
+					//	if(sffSearchCriteria->strModificationDate != NULL)
+					//	{
+					//		free(sffSearchCriteria->strModificationDate);
+					//		sffSearchCriteria->strModificationDate = NULL;
+					//	}*/
 
-						if(sffSearchCriteria->location != NULL)
-						{
-							free(sffSearchCriteria->location);
-							sffSearchCriteria->location = NULL;
-						}
+					//	if(sffSearchCriteria->location != NULL)
+					//	{
+					//		free(sffSearchCriteria->location);
+					//		sffSearchCriteria->location = NULL;
+					//	}
 
-						free(sffSearchCriteria);
-						sffSearchCriteria = NULL;
-					}
+					//	free(sffSearchCriteria);
+					//	sffSearchCriteria = NULL;
+					//}
 					SendMessage(hDlg, WM_CLOSE, 0, 0);
 					bReturnValue = TRUE;
 					break;
@@ -483,6 +1150,7 @@ INT_PTR CALLBACK ResultDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 		}
 	case WM_CLOSE:
 		{
+			FreeMemory();
 			DestroyWindow(hDlg);
 			bReturnValue = TRUE;
 			break;
@@ -508,6 +1176,7 @@ INT_PTR CALLBACK ResultDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 HWND CreateMainDialog(HINSTANCE hInstance)
 {
 	HWND hDlg = NULL;
+	hInst = hInstance;
 
 	hDlg =  CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_DIALOG_MAIN), 0, DialogProc, 0);
 	//SetWindowText(hDlg, L"Search Criteria");
@@ -527,7 +1196,7 @@ HWND CreateResultantDialog(HINSTANCE hInstance)
 {
 
 	HWND hDlg = NULL;
-
+	hInst = hInstance;
 	hDlg = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_RESULT_DIALOG), 0, ResultDialogProc, 0);
 	ShowWindow(hDlg, SW_NORMAL);
 

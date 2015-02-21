@@ -15,8 +15,10 @@ typedef struct SearchFilesFolders
 	bool bCreationDateLesser;
 	bool bModificationGreater;
 	bool bModificationLesser;
-	WCHAR* strCreationDate;
-	WCHAR* strModificationDate;
+	//WCHAR* strCreationDate;
+	SYSTEMTIME systimeCreationDate;
+	SYSTEMTIME systimeModificationDate;
+	//WCHAR* strModificationDate;
 	WCHAR* location;
 	
 
@@ -35,7 +37,7 @@ typedef struct FileInfo
 	FILETIME ftModificationTime;
 	bool bIsFile;
 	bool bError;
-	struct lstFileInfo* ParentFolder;
+	struct FileInfo* ParentFolder;
 	struct LstFileInSubFolder* ChildElements;
 	PWIN32_FIND_DATA actualData;
 }FILEINFO;
@@ -43,8 +45,12 @@ typedef struct FileInfo
 typedef struct LstFileInSubFolder
 {
 	FILEINFO* fileFolder;
-	FILEINFO* nextFileFolder;
+	struct LstFileInSubFolder* nextFileFolder;
 }LSTFILEINSUBFOLDER;
+
+void FreeChildElements(LSTFILEINSUBFOLDER* ChildElements);
+void FreeMemory();
+void FreeFileFolderInfo(FILEINFO* fileFolder);
 
 
 
